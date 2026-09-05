@@ -1,0 +1,15 @@
+// use prisma-next
+
+model Submissions {
+  id        String      @id @default(uuid())
+  code      String
+  language  String
+  status    SubmissionStatus  @default(Processing)
+  output    String?
+}
+
+enum SubmissionStatus {
+  Processing
+  Succus
+  Fail
+}

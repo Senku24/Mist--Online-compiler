@@ -1,5 +1,6 @@
 import express from "express";
 import redis, { createClient } from "redis";
+import { db } from "./prisma/db";
 
 const client = await createClient();
 client.connect();
@@ -9,19 +10,39 @@ app.use(express.json());
 
 
 
-app.post("/submition", (req, res) => {
-    const userID = req.body.userID;
-    const questionID = req.body.questionID;
+
+app.post("/submition",async (req, res) => {
+
     const code = req.body.code;
     const language = req.body.language;
      
-    client.lPush("problems", JSON.stringify({ userID, questionID, code, language }));  
+    const response = await db.orm.public.Submissions.create({
+        code,
+        language,
+        status: "Processing",
+    });
 
-    res.status(200).json({ message: "Submission received successfully", submissionId: { userID, questionID, code, language } });
+    client.lPush("problems", JSON.stringify({submissionId: response.id, code, language }));  
+
+    res.status(200).json({ message: "Submission received successfully", submissionId: response.id });
 });
 
-app.get("/submition/:submissionId", (req, res) => {
 
+app.get("/submition/:submissionId", async (req, res) => {
+    try {
+        const response = await db.orm.public.Submissions.first({
+            id: req.params.submissionId 
+        });
+
+        if (!response) {
+            return res.status(404).json({ message: "Submission not found" });
+        }
+
+        res.status(200).json(response);
+    } catch (err) {
+        console.error("Failed to fetch submission", req.params.submissionId, err);
+        res.status(500).json({ message: "Internal server error" });
+    }
 });
 
 
