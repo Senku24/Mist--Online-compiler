@@ -1,15 +1,14 @@
 import express from "express";
 import redis, { createClient } from "redis";
 import { db } from "./prisma/db";
+import cors from "cors";
 
 const client = await createClient();
 client.connect();
 
 const app = express();
 app.use(express.json());
-
-
-
+app.use(cors())
 
 app.post("/submition",async (req, res) => {
 
