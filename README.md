@@ -1,6 +1,9 @@
 # Mist
 
-Mist is a focused online compiler for writing, running, and inspecting code in a clean browser workspace. Submit a snippet, execute it through the appropriate runtime, and get the result back in the console.
+- Mist is a focused online compiler for writing, running, and inspecting code in a clean browser workspace.
+- Supports multiple languages.
+- Redis queue ──► Execution worker runtime.
+- Submit a snippet, execute it through the appropriate runtime, and get the result back in the console.
 
 ## Stack
 
