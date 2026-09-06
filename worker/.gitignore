@@ -2,6 +2,7 @@
 node_modules
 .npm-cache
 /.npm-cache
+code/
 # output
 out
 dist

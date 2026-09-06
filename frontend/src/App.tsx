@@ -1,70 +1,26 @@
-
-import { Button } from "./components/ui/button";
 import axios from "axios";
-import "./index.css";
+import { Braces, Check, ChevronDown, CircleHelp, Code2, Copy, FileCode2, FolderOpen, GitBranch, Maximize2, Play, Plus, RotateCcw, Settings2, TerminalSquare, Trash2, Zap } from "lucide-react";
 import { useRef, useState } from "react";
+import "./index.css";
 
 const BACKEND_URL = "http://localhost:3000";
+const starterCode = `#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, world!" << endl;\n    return 0;\n}`;
+const languages = [{ id: "cpp", label: "C++", icon: "C++" }, { id: "js", label: "JavaScript", icon: "JS" }, { id: "ts", label: "TypeScript", icon: "TS" }, { id: "py", label: "Python", icon: "PY" }];
 
 export function App() {
-  const codeRef = useRef(null as HTMLTextAreaElement | null);
-  const [status, setStatus] = useState("");
+  const codeRef = useRef<HTMLTextAreaElement | null>(null);
+  const [status, setStatus] = useState("Ready to run");
   const [output, setOutput] = useState("");
   const [language, setLanguage] = useState("cpp");
-
-  async function pollBackend(submissionId: string) {
-    const response = await axios.get(`${BACKEND_URL}/submition/${submissionId}`);
-    if(response.data.status !== "Processing") {
-      setStatus(response.data.status);
-      setOutput(response.data.output);
-    } else {
-      setTimeout(() => pollBackend(submissionId), 2000); 
-    }
-  }
-
-  return (
-    <div className="flex h-screen w-screen">
-
-      <div className="flex-1 h-screen bg-mist-400  p-4 overflow-scroll">
-        <div>
-          <Button variant={language === "ts" ? "destructive" : "outline"} onClick={() => setLanguage("ts")}>
-            TS
-          </Button>
-          <Button variant={language === "js" ? "destructive" : "outline"} onClick={() => setLanguage("js")}>
-            JS
-          </Button>
-          <Button variant={language === "py" ? "destructive" : "outline"} onClick={() => setLanguage("py")}>
-            PYTHON
-          </Button>
-          <Button variant={language === "cpp" ? "destructive" : "outline"} onClick={() => setLanguage("cpp")}>
-            C++
-          </Button>
-        </div>
-        <textarea ref={codeRef} className="w-full h-full border-2 rounded-2xl p-2 " placeholder="code" />
-      </div>
-
-      <div className="flex-1 h-screen bg-mauve-400 p-4 overflow-scroll">
-        <div>
-          <Button variant="outline"
-            onClick={async () => {
-              setStatus("Processing...");
-              setOutput("");
-              const response = await axios.post(`${BACKEND_URL}/submition`, {
-                language: language,
-                code: codeRef.current!.value
-              })
-              pollBackend(response.data.submissionId);
-            }}
-          >
-            Run:
-          </Button>
-        </div>
-        <div className="whitespace-pre-wrap p-2 m-3 border-s-2 rounded-3xl border-accent-foreground">{status}</div>
-        <div className="whitespace-pre-wrap p-2 m-2 border-2 rounded-3xl border-accent-foreground">{output}</div>
-      </div>
-    </div>
-    
-  );
+  const [copied, setCopied] = useState(false);
+  async function pollBackend(id: string) { const response = await axios.get(`${BACKEND_URL}/submition/${id}`); if (response.data.status !== "Processing") { setStatus(response.data.status); setOutput(response.data.output); } else setTimeout(() => pollBackend(id), 2000); }
+  async function runCode() { try { setStatus("Processing..."); setOutput(""); const response = await axios.post(`${BACKEND_URL}/submition`, { language, code: codeRef.current?.value ?? "" }); pollBackend(response.data.submissionId); } catch { setStatus("Run failed"); setOutput("Could not connect to the compiler service. Is the backend running?"); } }
+  async function copyOutput() { if (!output) return; await navigator.clipboard?.writeText(output); setCopied(true); setTimeout(() => setCopied(false), 1600); }
+  return <main className="app-shell">
+    <aside className="sidebar"><div className="brand-mark"><Zap size={18} fill="currentColor" /></div><div className="rail-group"><button className="rail-button active" title="Editor"><Code2 size={19} /></button><button className="rail-button" title="Files"><FolderOpen size={19} /></button><button className="rail-button" title="Snippets"><Braces size={19} /></button></div><div className="rail-bottom"><button className="rail-button" title="Settings"><Settings2 size={19} /></button><button className="rail-button" title="Help"><CircleHelp size={19} /></button><div className="avatar">NP</div></div></aside>
+    <section className="workspace"><header className="topbar"><div className="crumbs"><span className="muted">Workspace</span><span>/</span><span>Untitled session</span><span className="unsaved-dot" /></div><div className="top-actions"><button className="icon-button" title="Source control"><GitBranch size={17} /></button><button className="icon-button" title="New session"><Plus size={17} /></button><div className="divider" /><button className="user-chip"><span className="avatar small">NP</span><ChevronDown size={14} /></button></div></header>
+      <div className="content-grid"><section className="panel editor-panel"><div className="panel-heading"><div className="heading-title"><FileCode2 size={17} /><span>main.cpp</span><span className="file-status">●</span></div><div className="heading-actions"><button className="icon-button" title="Reset code" onClick={() => { if (codeRef.current) codeRef.current.value = starterCode; }}><RotateCcw size={16} /></button><button className="icon-button" title="Clear editor" onClick={() => { if (codeRef.current) codeRef.current.value = ""; }}><Trash2 size={16} /></button><button className="icon-button" title="Fullscreen editor" onClick={() => document.documentElement.requestFullscreen?.()}><Maximize2 size={16} /></button></div></div><div className="language-tabs">{languages.map(item => <button key={item.id} className={`language-tab ${language === item.id ? "selected" : ""}`} onClick={() => setLanguage(item.id)}><span className="language-icon">{item.icon}</span>{item.label}</button>)}</div><div className="editor-wrap"><div className="line-numbers">{Array.from({ length: 14 }, (_, i) => <span key={i}>{String(i + 1).padStart(2, "0")}</span>)}</div><textarea ref={codeRef} className="code-editor" defaultValue={starterCode} spellCheck={false} aria-label="Code editor" /></div><footer className="editor-footer"><span><span className="green-dot" />All systems operational</span><span>UTF-8&nbsp;&nbsp;•&nbsp;&nbsp; C++17</span></footer></section>
+        <section className="panel output-panel"><div className="panel-heading output-heading"><div className="heading-title"><TerminalSquare size={17} /><span>Console</span></div><button className="clear-output" onClick={() => { setOutput(""); setStatus("Ready to run"); }}>Clear</button></div><div className="console-body"><div className={`run-status ${status === "Processing..." ? "running" : ""}`}><span className="status-icon">{status === "Processing..." ? <span className="spinner" /> : <Check size={13} />}</span><span>{status}</span><span className="status-time">{status === "Ready to run" ? "" : "just now"}</span></div>{output ? <pre className="output-text">{output}</pre> : <div className="empty-console"><div className="empty-icon"><TerminalSquare size={21} /></div><p>Your output will appear here</p><span>Run your code to see the results</span></div>}</div><div className="console-footer"><span>Console output</span><button className="copy-button" onClick={copyOutput}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? "Copied" : "Copy output"}</button></div></section></div>
+      <footer className="runbar"><div className="runbar-note"><span className="green-dot" />Compiler online <span className="shortcut">⌘ Enter</span></div><button className="run-button" onClick={runCode}><Play size={16} fill="currentColor" />Run code</button></footer></section></main>;
 }
-
 export default App;
